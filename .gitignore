@@ -30,3 +30,5 @@
 *.exe
 *.out
 *.app
+DialogServer/.idea
+DialogServer/cmake-build-debug
