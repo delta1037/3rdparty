@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.21)
-project(dialog_server)
+project(dialog_client)
 
 set(CMAKE_CXX_STANDARD 17)
 
@@ -16,4 +16,4 @@ ELSE ()
     MESSAGE(STATUS "other platform: ${CMAKE_SYSTEM_NAME}")
 ENDIF (CMAKE_SYSTEM_NAME MATCHES "Linux")
 
-add_executable(DialogServer main.cpp DialogServer.cpp DialogServer.h)
+add_executable(dialog_client main.cpp)

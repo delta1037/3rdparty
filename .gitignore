@@ -32,3 +32,9 @@
 *.app
 DialogServer/.idea
 DialogServer/cmake-build-debug
+DialogClient/.idea
+DialogClient/.vscode
+DialogClient/build
+DialogClient/cmake-build-debug
+DialogServer/.vscode
+DialogServer/build
