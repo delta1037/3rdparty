@@ -17,6 +17,7 @@ SOCKET DialogServer::s_dialog_server_socket;
 
 DialogServer::DialogServer() {
     if(s_init_status){
+        // 服务端socket只初始化一次，其余由后台线程来完成
         return;
     }
     // 初始化socket之类的
@@ -24,35 +25,33 @@ DialogServer::DialogServer() {
     WSADATA wsa;
     WSAStartup(MAKEWORD(2,0),&wsa);
 #endif
-
     s_dialog_server_socket = socket(AF_INET, SOCK_STREAM, IPPROTO_TCP);
+    // 设置服务端地址和协议
     SOCKADDR_IN ser_addr;
-
     ser_addr.sin_family=AF_INET;
     ser_addr.sin_port=htons(SERVER_PORT);
     ser_addr.sin_addr.S_un.S_addr=inet_addr(SERVER_IP);
 
     // 绑定
     if(bind(s_dialog_server_socket, (SOCKADDR*)&ser_addr, sizeof(ser_addr)) != 0){
-        dialog_info("server bind socket error")
+        dialog_info("server %s:%d bind socket error", SERVER_IP, SERVER_PORT)
         return;
     }
 
     // 开启监听
     if(listen(s_dialog_server_socket, 5) != 0){
-        dialog_info("server listen error")
+        dialog_info("server %s:%d listen error", SERVER_IP, SERVER_PORT)
         return;
     }
 
-    // 启动线程接收连接 dialog_thread
+    // 启动后台线程 dialog_thread
     s_thread_exit_flag = false;
-    dialog_debug("start a thread")
+    dialog_debug("start accept thread")
     s_thread_ctrl = new std::thread([this] { dialog_thread(); });
 
     // 初始化完毕
     s_init_status = true;
-
-    dialog_info("dialog server init success")
+    dialog_info("dialog server %s:%d init success", SERVER_IP, SERVER_PORT)
 }
 
 DialogServer::~DialogServer() {
@@ -61,6 +60,7 @@ DialogServer::~DialogServer() {
 #ifndef __linux__
     WSACleanup();
 #endif
+
     // 关闭线程（TODO： 这里要考虑一定要关掉，不能在这里一直等关闭线程）
     s_thread_exit_flag = true;
     s_thread_ctrl->join();
@@ -70,9 +70,9 @@ void DialogServer::dialog_thread() {
     // 启动一个线程，用来监听客户端发过来的内容
     dialog_debug("dialog thread start")
     while(!s_thread_exit_flag){
-        int len = sizeof(SOCKADDR_IN);
         SOCKADDR_IN cli_addr;
-        SOCKET client_socket = accept(s_dialog_server_socket, (SOCKADDR*)&cli_addr, &len);
+        int len = sizeof(SOCKADDR_IN);
+        SOCKET cli_socket = accept(s_dialog_server_socket, (SOCKADDR*)&cli_addr, &len);
         dialog_debug("accept one request")
 
         // -1是主目录，其它是其它类型的目录
@@ -81,13 +81,13 @@ void DialogServer::dialog_thread() {
         // 发送大纲数据，准备循环处理客户端指令（包括退出的数据）
         string main_content = get_tips_table(idx_choose);
         dialog_debug("send main content: \n%s", main_content.c_str())
-        send(client_socket, main_content.c_str(), (int)main_content.size(), 0);
+        send(cli_socket, main_content.c_str(), (int)main_content.size(), 0);
 
         // 循环接收数据
         char socket_buffer[SOCKET_BUFFER_SIZE];
         while(true){
             memset(socket_buffer, 0 , SOCKET_BUFFER_SIZE);
-            int recv_length = recv(client_socket, socket_buffer, SOCKET_BUFFER_SIZE, 0);
+            int recv_length = recv(cli_socket, socket_buffer, SOCKET_BUFFER_SIZE, 0);
             // 异常的接收
             if(recv_length <= 0){
                 dialog_debug("wrong recv, exit connect")
@@ -98,27 +98,29 @@ void DialogServer::dialog_thread() {
             if(socket_buffer[0] == 'q' && idx_choose == -1){
                 main_content = "exit";
                 dialog_debug("main content use e to exit, send: %s", main_content.c_str())
-                send(client_socket, main_content.c_str(), (int)main_content.size(), 0);
+                send(cli_socket, main_content.c_str(), (int)main_content.size(), 0);
                 break;
             }
             // 在非主目录上退出遇到退出选项就回到主目录
             if(socket_buffer[0] == 'q' && idx_choose != -1){
                 idx_choose = -1;
                 dialog_debug("child content use e to exit, send: %s", main_content.c_str())
-                send(client_socket, main_content.c_str(), (int)main_content.size(), 0);
+                send(cli_socket, main_content.c_str(), (int)main_content.size(), 0);
                 continue;
             }
             // 发送当前级别的目录
             if(socket_buffer[0] == 'i' || (socket_buffer[0] < '0' || socket_buffer[0] > '9')){
                 string ret_content = get_tips_table(idx_choose);
                 dialog_debug("send info table: %s", ret_content.c_str())
-                send(client_socket, ret_content.c_str(), (int)ret_content.size(), 0);
+                send(cli_socket, ret_content.c_str(), (int)ret_content.size(), 0);
                 continue;
             }
 
             // 其它选项就选择对应的输出方式
             dialog_debug("server recv msg: %s", socket_buffer)
             int idx_recv = atoi(socket_buffer);
+
+            // 处理根目录下的情况
             if(idx_choose == -1){
                 // 主目录里去选
                 string ret_content;
@@ -133,7 +135,7 @@ void DialogServer::dialog_thread() {
                     ret_content = main_content;
                 }
                 dialog_debug("recv %d and send: %s", idx_recv, ret_content.c_str())
-                send(client_socket, ret_content.c_str(), (int)ret_content.size(), 0);
+                send(cli_socket, ret_content.c_str(), (int)ret_content.size(), 0);
 
                 // 结束，忽略后面的内容
                 continue;
@@ -144,18 +146,18 @@ void DialogServer::dialog_thread() {
                 dialog_debug("idx %d:%s call menu func %d", idx_choose, s_dialog_map[idx_choose].name.c_str(), idx_recv)
                 (s_dialog_map[idx_choose].p_instance->*(s_dialog_map[idx_choose].func))(idx_recv);
                 dialog_debug("call func end:%s", s_dialog_buffer.c_str())
-                send(client_socket, s_dialog_buffer.c_str(), (int)s_dialog_buffer.size(), 0);
+                send(cli_socket, s_dialog_buffer.c_str(), (int)s_dialog_buffer.size(), 0);
                 s_dialog_buffer.clear();
                 dialog_debug("send data:%s", s_dialog_buffer.c_str())
             }else{
                 // 未知情况，重新初始化
                 idx_choose = -1;
                 dialog_debug("send main content: \n%s", main_content.c_str())
-                send(client_socket, main_content.c_str(), (int)main_content.size(), 0);
+                send(cli_socket, main_content.c_str(), (int)main_content.size(), 0);
             }
         }
         // 服务端关闭连接
-        closesocket(client_socket);
+        closesocket(cli_socket);
     }
 }
 
