@@ -16,4 +16,4 @@ ELSE ()
     MESSAGE(STATUS "other platform: ${CMAKE_SYSTEM_NAME}")
 ENDIF (CMAKE_SYSTEM_NAME MATCHES "Linux")
 
-add_executable(DialogServer main.cpp DialogServer.cpp DialogServer.h)
+add_executable(dialog_server main.cpp DialogServer.cpp DialogServer.h)
