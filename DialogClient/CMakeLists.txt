@@ -16,4 +16,5 @@ ELSE ()
     MESSAGE(STATUS "other platform: ${CMAKE_SYSTEM_NAME}")
 ENDIF (CMAKE_SYSTEM_NAME MATCHES "Linux")
 
+add_compile_options(-finput-charset=UTF-8 -fexec-charset=UTF-8)
 add_executable(dialog_client main.cpp)
