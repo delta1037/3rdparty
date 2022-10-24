@@ -17,4 +17,4 @@ ELSE ()
 ENDIF (CMAKE_SYSTEM_NAME MATCHES "Linux")
 
 add_compile_options(-finput-charset=UTF-8 -fexec-charset=UTF-8)
-add_executable(dialog_server main.cpp DialogServer.cpp DialogServer.h)
+add_executable(dialog_server main.cpp dialog_server.cpp dialog_server.h)

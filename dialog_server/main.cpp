@@ -1,5 +1,5 @@
 #include <iostream>
-#include "DialogServer.h"
+#include "dialog_server.h"
 
 class test_1 : public DialogServer {
 public:

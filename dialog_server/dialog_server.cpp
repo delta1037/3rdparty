@@ -1,11 +1,11 @@
 #include <cstdio>
 #include <cstdarg>
-#include "DialogServer.h"
+#include "dialog_server.h"
 
 using namespace std;
 
 bool DialogServer::s_init_status = false;
-string DialogServer::s_dialog_buffer;
+string DialogServer::s_dialog_buffer = "\n";
 
 uint32_t DialogServer::s_dialog_idx = 0;
 std::map<uint32_t, DialogRegisterData> DialogServer::s_dialog_map;
@@ -147,7 +147,7 @@ void DialogServer::dialog_thread() {
                 (s_dialog_map[idx_choose].p_instance->*(s_dialog_map[idx_choose].func))(idx_recv);
                 dialog_debug("call func end:%s", s_dialog_buffer.c_str())
                 send(cli_socket, s_dialog_buffer.c_str(), (int)s_dialog_buffer.size(), 0);
-                s_dialog_buffer.clear();
+                s_dialog_buffer = "\n";
                 dialog_debug("send data:%s", s_dialog_buffer.c_str())
             }else{
                 // 未知情况，重新初始化
@@ -181,11 +181,11 @@ DialogRegisterData *DialogServer::register_main(const std::string &name, MENU_FU
 }
 
 void DialogServer::dialog_print(const char *format, ...) {
-    char buffer[MAX_BUFFER]{0};
+    char buffer[DIALOG_MAX_BUFFER]{0};
 
     va_list va_args;
     va_start(va_args, format);
-    std::vsnprintf(buffer, MAX_BUFFER, format, va_args);
+    std::vsnprintf(buffer, DIALOG_MAX_BUFFER, format, va_args);
     va_end(va_args);
 
     s_dialog_buffer += buffer;

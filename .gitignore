@@ -38,3 +38,5 @@ DialogClient/build
 DialogClient/cmake-build-debug
 DialogServer/.vscode
 DialogServer/build
+dialog_client/build/
+dialog_server/build/**

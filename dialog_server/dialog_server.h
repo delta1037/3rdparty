@@ -12,7 +12,7 @@
 typedef SOCKET int;
 #endif
 
-#define MAX_BUFFER 2048
+#define DIALOG_MAX_BUFFER 2048
 #define CONTENT_BUFFER 2048
 
 /* 注意与客务端保持一致 */
@@ -48,7 +48,7 @@ struct DialogRegisterData {
 class DialogServer {
 protected:
     DialogServer();
-    ~DialogServer();
+    virtual ~DialogServer();
 
     // 注册新的菜单
     static DialogRegisterData *register_main(const std::string &, MENU_FUNC, DialogServer *p_instance);
