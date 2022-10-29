@@ -1,102 +1,49 @@
-# Dialog
-项目目标：查看运行中的软件的数据
+# 3rdparty
 
-实现方案：分为服务端和客户端，通过socket互联。服务端与需要查看数据的程序集成到一起，并注册查看数据的命令；客户端通过向正在运行的程序发送指令和接收输出来显示正在运行的程序的数据。
+仓库说明：第三方库集合
 
+## dialog_*
 
+- 项目状态：可用
 
-## DialogServer
+- 项目目标：查看**运行中**的软件的数据
 
-### 使用
+- 实现方案：分为服务端和客户端，通过socket互联。服务端与需要查看数据的程序集成到一起，并注册查看数据的命令；客户端通过向正在运行的程序发送指令和接收输出来显示正在运行的程序的数据。
 
-首先需要输出数据的类需要继承DialogServer类，并重写void dialog(uint32_t idx)函数。
+- 服务端和客户端互联：服务端注册的内容就是客户端收到的菜单，客户端根据菜单输入对应的数字标号就可以获取对应内容的输出。
 
-```c++
-class test_1 : public DialogServer {
-    public:
-    void dialog(uint32_t idx) override {
-    }
-}
-```
+  - dialog_server：服务端部分
 
-然后需要注册查看数据的命令，包括主目录的注册和子命令的注册。
+  - dialog_client：客户端部分
 
-```c++
-// 注册主目录名称和注册数据操作函数
-DialogRegisterData *data = register_main("test_1", reinterpret_cast<MENU_FUNC>(&test_1::dialog), this);
-// 注册子命令id和简要信息
-data->register_menu(0, "print 0");
-data->register_menu(1, "print 1");
-```
+## dlog
 
-编写dialog函数，设置子命令id需要输出的内容：（注意这里的idx是和上面注册的命令id是有关联的）
+- 项目状态：可用
+- 项目目标：一个简易的日志管理程序，配置软件的日志输出位置和输出等级。
 
-```c++
-void dialog(uint32_t idx) {
-    if(idx == 0){
-        dialog_print("test_2 idx = 0\n");
-    }else if(idx == 1){
-        dialog_print("test_2 idx = 1\n");
-    }else{
-        dialog_print("invalid idx\n");
-    }
-}
-```
+## http
 
+- 项目状态：可用
+- 项目目标：C++实现的http库，可以方便的实现HTTP请求和搭建HTTP服务器
+- 项目来源：https://github.com/yhirose/cpp-httplib
 
+## jsoncpp
 
-### 测试
+- 项目状态：可用
+- 项目目标：C++实现的json库，可以实现json文件的读写
+- 项目来源：https://github.com/open-source-parsers/jsoncpp
 
-进入DialogServer主目录，创建build文件夹并切换到该目录：
+## mysql-*
 
-```bash
-cd /path/to/dialog_server
-mkdir build
-cd build
-```
+- 项目状态：可用
+- 项目目标：mysql操作接口
+- 项目来源：已安装的mysql
 
-编译：
+## dconfig
 
-```bash
-cmake .. -G "MinGW Makefiles"
-make
-```
+- 项目状态：可用
 
-运行：
+- 项目目标：读写配置文件封装
 
-```bash
-./dialog_server.exe
-```
+- 项目依赖：jsoncpp
 
-
-
-## DialogClient
-
-### 使用
-
-进入DialogSClient主目录，创建build文件夹并切换到该目录：
-
-```bash
-cd /path/to/dialog_client
-mkdir build
-cd build
-```
-
-编译：
-
-```bash
-cmake .. -G "MinGW Makefiles"
-make
-```
-
-运行：
-
-```bash
-./dialog_client.exe
-```
-
-
-
-## 服务端客户端配合
-
-服务端注册的内容就是客户端收到的菜单，客户端根据菜单输入对应的数字标号就可以获取对应内容的输出。
