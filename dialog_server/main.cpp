@@ -45,7 +45,11 @@ int main() {
     test_1 test_1_i;
     test_2 test_2_i;
     while(true){
+#ifdef __linux
+        sleep(60);
+#else
         Sleep(60);
+#endif
     }
     return 0;
 }

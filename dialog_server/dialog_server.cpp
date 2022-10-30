@@ -30,7 +30,11 @@ DialogServer::DialogServer() {
     SOCKADDR_IN ser_addr;
     ser_addr.sin_family=AF_INET;
     ser_addr.sin_port=htons(SERVER_PORT);
-    ser_addr.sin_addr.S_un.S_addr=inet_addr(SERVER_IP);
+#ifdef __linux__
+    ser_addr.sin_addr.s_addr = inet_addr(SERVER_IP);
+#else
+    ser_addr.sin_addr.S_un.S_addr = inet_addr(SERVER_IP);
+#endif
 
     // 绑定
     if(bind(s_dialog_server_socket, (SOCKADDR*)&ser_addr, sizeof(ser_addr)) != 0){
@@ -56,11 +60,12 @@ DialogServer::DialogServer() {
 
 DialogServer::~DialogServer() {
     // 关闭socket
+#ifdef __linux__
+    close(s_dialog_server_socket);
+#else
     closesocket(s_dialog_server_socket);
-#ifndef __linux__
     WSACleanup();
 #endif
-
     // 关闭线程（TODO： 这里要考虑一定要关掉，不能在这里一直等关闭线程）
     s_thread_exit_flag = true;
     s_thread_ctrl->join();
@@ -71,7 +76,11 @@ void DialogServer::dialog_thread() {
     dialog_debug("dialog thread start")
     while(!s_thread_exit_flag){
         SOCKADDR_IN cli_addr;
+#ifdef __linux__
+        unsigned int len = sizeof(SOCKADDR_IN);
+#else
         int len = sizeof(SOCKADDR_IN);
+#endif
         SOCKET cli_socket = accept(s_dialog_server_socket, (SOCKADDR*)&cli_addr, &len);
         dialog_debug("accept one request")
 
@@ -157,7 +166,11 @@ void DialogServer::dialog_thread() {
             }
         }
         // 服务端关闭连接
+#ifdef __linux__
+        close(cli_socket);
+#else
         closesocket(cli_socket);
+#endif
     }
 }
 

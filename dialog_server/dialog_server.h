@@ -4,12 +4,20 @@
 #include <vector>
 #include <map>
 #include <thread>
-#ifndef __linux__
+#ifdef __linux__
+#include <sys/socket.h>
+#include <netinet/in.h>
+#include <arpa/inet.h>
+#include <string.h>
+#include <unistd.h>
+
+typedef int SOCKET;
+typedef struct sockaddr SOCKADDR;
+typedef struct sockaddr_in SOCKADDR_IN;
+#else
 #include <winsock2.h>
 #include <windows.h>
 #pragma comment(lib,"ws2_32.lib")
-#else
-typedef SOCKET int;
 #endif
 
 #define DIALOG_MAX_BUFFER 2048
@@ -21,7 +29,11 @@ typedef SOCKET int;
 #define SERVER_PORT 4321
 
 #define FORMAT_PREFIX "<%s, %d> "
+#ifdef __linux__
+#define FILENAME ( __builtin_strrchr(__FILE__, '/') ? __builtin_strrchr(__FILE__, '/') + 1 : __FILE__ )
+#else
 #define FILENAME ( __builtin_strrchr(__FILE__, '\\') ? __builtin_strrchr(__FILE__, '\\') + 1 : __FILE__ )
+#endif
 #define dialog_info(format, args...) printf(FORMAT_PREFIX#format, FILENAME , __LINE__, ##args);printf("\n");
 #ifdef DEBUG
 #define dialog_debug(format, args...) printf(FORMAT_PREFIX#format, FILENAME, __FUNCTION__ , __LINE__, ##args);printf("\n");

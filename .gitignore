@@ -25,3 +25,9 @@
 *.exe
 *.out
 *.app
+dialog_client/.idea/
+dialog_client/build/
+dialog_client/cmake-build-debug
+dialog_server/build/
+dialog_server/cmake-build-debug
+dialog_server/.idea
