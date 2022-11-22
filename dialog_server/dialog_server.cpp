@@ -15,7 +15,10 @@ std::thread *DialogServer::s_thread_ctrl;
 
 SOCKET DialogServer::s_dialog_server_socket;
 
+int DialogServer::s_server_init_count = 0;
+
 DialogServer::DialogServer() {
+    s_server_init_count++;
     if(s_init_status){
         // 服务端socket只初始化一次，其余由后台线程来完成
         return;
@@ -59,16 +62,20 @@ DialogServer::DialogServer() {
 }
 
 DialogServer::~DialogServer() {
-    // 关闭socket
+    s_server_init_count--;
+    // 关闭线程
+    if(s_server_init_count == 0 && s_thread_ctrl){
+        // 关闭socket
 #ifdef __linux__
-    close(s_dialog_server_socket);
+        close(s_dialog_server_socket);
 #else
-    closesocket(s_dialog_server_socket);
-    WSACleanup();
+        closesocket(s_dialog_server_socket);
+        WSACleanup();
 #endif
-    // 关闭线程（TODO： 这里要考虑一定要关掉，不能在这里一直等关闭线程）
-    s_thread_exit_flag = true;
-    s_thread_ctrl->join();
+        s_thread_exit_flag = true;
+        s_thread_ctrl->join();
+        s_thread_ctrl = nullptr;
+    }
 }
 
 void DialogServer::dialog_thread() {

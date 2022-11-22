@@ -89,6 +89,9 @@ private:
 
     // 套接字定义
     static SOCKET s_dialog_server_socket;
+
+    // server count
+    static int s_server_init_count;
 };
 
 
